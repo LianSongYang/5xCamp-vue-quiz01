@@ -2,6 +2,8 @@
 import { ref,computed,watch } from 'vue';
 const uBikeStops = ref([]);
 const search =ref('');
+const sortKey = ref(''); 
+const sortOrder = ref('asc')
 
 
 
@@ -32,6 +34,19 @@ const timeFormat = (val) => {
   return val.replace(pattern, '$1/$2/$3 $4:$5:$6');
 };
 
+const sortedBikeStops = computed(() => {
+  if (!sortKey.value) return uBikeStops.value;
+  return [...uBikeStops.value].sort((a, b) => {
+    const valA = a[sortKey.value];
+    const valB = b[sortKey.value];
+    return sortOrder.value === 'asc' ? valA - valB : valB - valA;
+  });
+});
+
+const changeSort = (key) => {
+  sortKey.value = key;
+  sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc';
+};
 
 
 </script>
@@ -66,19 +81,21 @@ const timeFormat = (val) => {
           <th class="w-12">#</th>
           <th>場站名稱</th>
           <th>場站區域</th>
-          <th>目前可用車輛
-            <i  class="fa fa-sort-asc" aria-hidden="true"></i>
-            <i  class="fa fa-sort-desc" aria-hidden="true"></i>
+          <th @click="changeSort('sbi')">目前可用車輛
+            <i v-show="sortKey === 'sbi' && sortOrder === 'asc'" class="fa fa-sort-asc" aria-hidden="true"></i>
+            <i v-show="sortKey === 'sbi' && sortOrder === 'desc'" class="fa fa-sort-desc" aria-hidden="true"></i>
+            <i v-show="sortKey !== 'sbi'" class="fa fa-sort" aria-hidden="true"></i>
           </th>
-          <th>總停車格
-            <i  class="fa fa-sort-asc" aria-hidden="true"></i>
-            <i  class="fa fa-sort-desc" aria-hidden="true"></i>
+          <th @click="changeSort('tot')">總停車格
+            <i v-show="sortKey === 'tot' && sortOrder === 'asc'" class="fa fa-sort-asc" aria-hidden="true"></i>
+            <i v-show="sortKey === 'tot' && sortOrder === 'desc'" class="fa fa-sort-desc" aria-hidden="true"></i>
+            <i v-show="sortKey !== 'tot'" class="fa fa-sort" aria-hidden="true"></i>
           </th>
           <th>資料更新時間</th>          
         </tr>
       </thead>
       <tbody>
-        <tr v-for="(s, idx) in filtereduBikeStops" :key="s.sno">
+        <tr v-for="(s, idx) in sortedBikeStops" :key="s.sno">
           <td>{{ idx +1 }}</td>
           <td>{{ s.sna }}</td>
           <td>{{ s.sarea }}</td>
