@@ -3,7 +3,9 @@ import { ref,computed,watch } from 'vue';
 const uBikeStops = ref([]);
 const search =ref('');
 const sortKey = ref(''); 
-const sortOrder = ref('asc')
+const sortOrder = ref('asc');
+const itemsPerPage = ref(10)
+
 
 
 
@@ -35,7 +37,7 @@ const timeFormat = (val) => {
 };
 
 const sortedBikeStops = computed(() => {
-  if (!sortKey.value) return uBikeStops.value;
+  if (!sortKey.value) return filtereduBikeStops.value;
   return [...uBikeStops.value].sort((a, b) => {
     const valA = a[sortKey.value];
     const valB = b[sortKey.value];
@@ -48,6 +50,9 @@ const changeSort = (key) => {
   sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc';
 };
 
+const paginatedBikeStops = computed(() => {
+  return sortedBikeStops.value.slice(0, itemsPerPage.value); 
+});
 
 </script>
 
@@ -66,7 +71,7 @@ const changeSort = (key) => {
       </div>
       <div class="pl-2">
         每頁顯示筆數: 
-        <select class="border w-20 p-1 ml-2">
+        <select v-model="itemsPerPage" class="border w-20 p-1 ml-2">
           <option value="10">10</option>
           <option value="20">20</option>
           <option value="30">30</option>
@@ -84,18 +89,16 @@ const changeSort = (key) => {
           <th @click="changeSort('sbi')">目前可用車輛
             <i v-show="sortKey === 'sbi' && sortOrder === 'asc'" class="fa fa-sort-asc" aria-hidden="true"></i>
             <i v-show="sortKey === 'sbi' && sortOrder === 'desc'" class="fa fa-sort-desc" aria-hidden="true"></i>
-            <i v-show="sortKey !== 'sbi'" class="fa fa-sort" aria-hidden="true"></i>
           </th>
           <th @click="changeSort('tot')">總停車格
             <i v-show="sortKey === 'tot' && sortOrder === 'asc'" class="fa fa-sort-asc" aria-hidden="true"></i>
             <i v-show="sortKey === 'tot' && sortOrder === 'desc'" class="fa fa-sort-desc" aria-hidden="true"></i>
-            <i v-show="sortKey !== 'tot'" class="fa fa-sort" aria-hidden="true"></i>
           </th>
           <th>資料更新時間</th>          
         </tr>
       </thead>
       <tbody>
-        <tr v-for="(s, idx) in sortedBikeStops" :key="s.sno">
+        <tr v-for="(s, idx) in paginatedBikeStops " :key="s.sno">
           <td>{{ idx +1 }}</td>
           <td>{{ s.sna }}</td>
           <td>{{ s.sarea }}</td>
