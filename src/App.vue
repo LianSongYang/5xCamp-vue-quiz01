@@ -1,6 +1,11 @@
 <script setup>
-import { ref } from 'vue';
+import { ref,  computed} from 'vue';
 const uBikeStops = ref([]);
+const search = ref('');
+const searchResult = computed(() => {
+  return uBikeStops.value.filter(s => s.sna.includes(search.value));
+});
+
 
 // 資料來源: https://data.ntpc.gov.tw/openapi/swagger-ui/index.html?configUrl=%2Fapi%2Fv1%2Fopenapi%2Fswagger%2Fconfig&urls.primaryName=%E6%96%B0%E5%8C%97%E5%B8%82%E6%94%BF%E5%BA%9C%E4%BA%A4%E9%80%9A%E5%B1%80(94)#/JSON/get_010e5b15_3823_4b20_b401_b1cf000550c5_json
 
@@ -36,7 +41,7 @@ const timeFormat = (val) => {
   <div class="">
     <div class="grid grid-cols-2 my-4 px-4 w-full mx-auto">
       <div class="pl-2">
-        目前頁面的站點名稱搜尋: <input type="text" class="border w-60 p-1 ml-2">
+        目前頁面的站點名稱搜尋: <input v-model="search"  type="text" class="border w-60 p-1 ml-2">
       </div>
       <div class="pl-2">
         每頁顯示筆數: 
@@ -67,7 +72,7 @@ const timeFormat = (val) => {
         </tr>
       </thead>
       <tbody>
-        <tr v-for="(s, idx) in uBikeStops" :key="s.sno">
+        <tr v-for="(s, idx) in searchResult" :key="s.sno">
           <td>{{ idx +1 }}</td>
           <td>{{ s.sna }}</td>
           <td>{{ s.sarea }}</td>
