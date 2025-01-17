@@ -1,10 +1,30 @@
 <script setup>
-import { ref,  computed} from 'vue';
+import { ref,  computed, watch} from 'vue';
 const uBikeStops = ref([]);
 const search = ref('');
 const searchResult = computed(() => {
   return uBikeStops.value.filter(s => s.sna.includes(search.value));
 });
+
+
+const sortBy = ref('tot');
+const isSortAsc = ref(true);
+const sortedData = computed(() => {
+  return searchResult.value.sort((a, b) => {
+    return isSortAsc.value ? a[sortBy.value] - b[sortBy.value] : b[sortBy.value] - a[sortBy.value];
+  });
+});
+const setSort = (sortby) => {
+  if (sortby === sortBy.value) {
+    isSortAsc.value = !isSortAsc.value;
+  } else {
+    sortBy.value = sortby;
+    isSortAsc.value = true;
+  }
+}
+const isLoading = ref(false);
+
+watch(fetchData, { immediate: true });
 
 
 // 資料來源: https://data.ntpc.gov.tw/openapi/swagger-ui/index.html?configUrl=%2Fapi%2Fv1%2Fopenapi%2Fswagger%2Fconfig&urls.primaryName=%E6%96%B0%E5%8C%97%E5%B8%82%E6%94%BF%E5%BA%9C%E4%BA%A4%E9%80%9A%E5%B1%80(94)#/JSON/get_010e5b15_3823_4b20_b401_b1cf000550c5_json
@@ -17,11 +37,16 @@ const searchResult = computed(() => {
 // snaen：場站名稱(英文)、 aren：地址(英文)、 bemp：空位數量、 act：全站禁用狀態
 
 // page: 頁碼, size: 每頁筆數, 全部 349 筆.
-fetch('/api/datasets/010e5b15-3823-4b20-b401-b1cf000550c5/json?page=1&size=999')
+function fetchData() {
+  isLoading.value = true;
+
+  fetch('/api/datasets/010e5b15-3823-4b20-b401-b1cf000550c5/json?page=1&size=999')
   .then(res => res.text())
   .then(data => {
     uBikeStops.value = JSON.parse(data);
+    isLoading.value = false;
   });
+}
 
 const timeFormat = (val) => {
   // 時間格式
@@ -53,26 +78,37 @@ const timeFormat = (val) => {
       </div>
     </div>
 
-    
+
+    <div v-if="isLoading">
+      Loading...
+    </div>
     <table class="table table-striped">
       <thead>
         <tr>
           <th class="w-12">#</th>
           <th>場站名稱</th>
           <th>場站區域</th>
-          <th>目前可用車輛
-            <i class="fa fa-sort-asc" aria-hidden="true"></i>
-            <i class="fa fa-sort-desc" aria-hidden="true"></i>
+          <th @click="setSort('sbi')">
+            目前可用車輛
+            <template v-if="sortBy === 'sbi'">
+              <i v-if="isSortAsc" class="fa fa-sort-asc" aria-hidden="true"></i>
+              <i v-else class="fa fa-sort-desc" aria-hidden="true"></i>
+            </template>
           </th>
-          <th>總停車格
-            <i class="fa fa-sort-asc" aria-hidden="true"></i>
-            <i class="fa fa-sort-desc" aria-hidden="true"></i>
+          <th
+            @click="setSort('tot')">
+              總停車格
+            <template v-if="sortBy === 'tot'">
+              <i v-if="isSortAsc" class="fa fa-sort-asc" aria-hidden="true"></i>
+              <i v-else class="fa fa-sort-desc" aria-hidden="true"></i>
+            </template>
+
           </th>
           <th>資料更新時間</th>          
         </tr>
       </thead>
       <tbody>
-        <tr v-for="(s, idx) in searchResult" :key="s.sno">
+        <tr v-for="(s, idx) in sortedData" :key="s.sno">
           <td>{{ idx +1 }}</td>
           <td>{{ s.sna }}</td>
           <td>{{ s.sarea }}</td>
