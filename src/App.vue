@@ -1,6 +1,7 @@
 <script setup>
 import { ref,  computed, watch} from 'vue';
 const uBikeStops = ref([]);
+const countPerPage = ref(700);
 const search = ref('');
 const searchResult = computed(() => {
   return uBikeStops.value.filter(s => s.sna.includes(search.value));
@@ -24,8 +25,15 @@ const setSort = (sortby) => {
 }
 const isLoading = ref(false);
 
-watch(fetchData, { immediate: true });
-
+const totalCounts = 684;
+const currentPage = ref(1);
+const totalPages = computed(() => {
+  return Math.ceil(totalCounts / countPerPage.value);
+});
+watch(countPerPage, () => {
+  currentPage.value = 1;
+});
+watch([countPerPage, currentPage], fetchData, { immediate: true });
 
 // 資料來源: https://data.ntpc.gov.tw/openapi/swagger-ui/index.html?configUrl=%2Fapi%2Fv1%2Fopenapi%2Fswagger%2Fconfig&urls.primaryName=%E6%96%B0%E5%8C%97%E5%B8%82%E6%94%BF%E5%BA%9C%E4%BA%A4%E9%80%9A%E5%B1%80(94)#/JSON/get_010e5b15_3823_4b20_b401_b1cf000550c5_json
 
@@ -40,7 +48,7 @@ watch(fetchData, { immediate: true });
 function fetchData() {
   isLoading.value = true;
 
-  fetch('/api/datasets/010e5b15-3823-4b20-b401-b1cf000550c5/json?page=1&size=999')
+  fetch(`/api/datasets/010e5b15-3823-4b20-b401-b1cf000550c5/json?page=${currentPage.value}&size=${countPerPage.value}`)
   .then(res => res.text())
   .then(data => {
     uBikeStops.value = JSON.parse(data);
@@ -70,10 +78,12 @@ const timeFormat = (val) => {
       </div>
       <div class="pl-2">
         每頁顯示筆數: 
-        <select class="border w-20 p-1 ml-2">
+        <select class="border w-20 p-1 ml-2" v-model="countPerPage">
           <option value="10">10</option>
-          <option value="20">20</option>
           <option value="30">30</option>
+          <option value="50">50</option>
+          <option value="500">500</option>
+          <option value="700">700</option>
         </select>
       </div>
     </div>
@@ -82,7 +92,7 @@ const timeFormat = (val) => {
     <div v-if="isLoading">
       Loading...
     </div>
-    <table class="table table-striped">
+    <table v-else class="table table-striped">
       <thead>
         <tr>
           <th class="w-12">#</th>
@@ -121,48 +131,33 @@ const timeFormat = (val) => {
     
     <!-- 頁籤 -->
     <ul class="my-4 flex justify-center">
-      <li class="page-item cursor-pointer">
+      <li 
+        @click="currentPage = 1"
+        class="page-item cursor-pointer">
         <span class="page-link">第一頁</span>
       </li>
-      <li class="page-item cursor-pointer">
+      <li 
+        @click="currentPage = (currentPage > 1) ? currentPage - 1 : 1"
+        class="page-item cursor-pointer">
         <span class="page-link">&lt;</span>
       </li>
 
-      <li class="page-item cursor-pointer active">
-        <span class="page-link">1</span>
-      </li>
-      <li class="page-item cursor-pointer">
-        <span class="page-link">2</span>
-      </li>
-      <li class="page-item cursor-pointer">
-        <span class="page-link">3</span>
-      </li>
-      <li class="page-item cursor-pointer">
-        <span class="page-link">4</span>
-      </li>
-      <li class="page-item cursor-pointer">
-        <span class="page-link">5</span>
-      </li>
-      <li class="page-item cursor-pointer">
-        <span class="page-link">6</span>
-      </li>
-      <li class="page-item cursor-pointer">
-        <span class="page-link">7</span>
-      </li>
-      <li class="page-item cursor-pointer">
-        <span class="page-link">8</span>
-      </li>
-      <li class="page-item cursor-pointer">
-        <span class="page-link">9</span>
-      </li>
-      <li class="page-item cursor-pointer">
-        <span class="page-link">10</span>
+      <li 
+        v-for="page in totalPages"
+        @click="currentPage = page"
+        :class="{ 'active': page === currentPage }"
+        class="page-item cursor-pointer">
+        <span class="page-link">{{ page }}</span>
       </li>
 
-      <li class="page-item cursor-pointer">
+      <li 
+        @click="currentPage = (currentPage < totalPages) ? currentPage + 1 : totalPages"
+        class="page-item cursor-pointer">
         <span class="page-link" href>&gt;</span>
       </li>      
-      <li class="page-item cursor-pointer">
+      <li 
+        @click="currentPage = totalPages"
+        class="page-item cursor-pointer">
         <span class="page-link">最末頁</span>
       </li>
     </ul>
